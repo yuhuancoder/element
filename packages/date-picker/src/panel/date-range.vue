@@ -164,7 +164,7 @@
           </div>
         </div>
       </div>
-      <div class="el-picker-panel__footer" v-if="showTime">
+      <div class="el-picker-panel__footer">
         <el-button
           size="mini"
           type="text"
