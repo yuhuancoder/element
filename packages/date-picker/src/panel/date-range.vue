@@ -164,7 +164,7 @@
           </div>
         </div>
       </div>
-      <div class="el-picker-panel__footer" v-if="showTime">
+      <div class="el-picker-panel__footer" >
         <el-button
           size="mini"
           type="text"
@@ -347,12 +347,15 @@
         timeUserInput: {
           min: null,
           max: null
-        }
+        },
+        oldMinDate: null,
+        oldMaxDate: null,
+        hasClear: false
       };
     },
 
     watch: {
-      minDate(val) {
+      minDate(val, oldVal) {
         this.dateUserInput.min = null;
         this.timeUserInput.min = null;
         this.$nextTick(() => {
@@ -372,7 +375,7 @@
         }
       },
 
-      maxDate(val) {
+      maxDate(val, oldVal) {
         this.dateUserInput.max = null;
         this.timeUserInput.max = null;
         if (val && this.$refs.maxTimePicker) {
@@ -441,8 +444,12 @@
 
     methods: {
       handleClear() {
+        this.hasClear = true;
         this.minDate = null;
         this.maxDate = null;
+        this.oldMinDate = null;
+        this.oldMaxDate = null;
+        this.rangeState.selecting = false;
         this.leftDate = calcDefaultValue(this.defaultValue)[0];
         this.rightDate = nextMonth(this.leftDate);
         this.$emit('pick', null);
@@ -501,7 +508,6 @@
         this.timeUserInput[type] = value;
         if (value.length !== this.timeFormat.length) return;
         const parsedValue = parseDate(value, this.timeFormat);
-
         if (parsedValue) {
           if (type === 'min') {
             this.minDate = modifyTime(this.minDate, parsedValue.getHours(), parsedValue.getMinutes(), parsedValue.getSeconds());
@@ -536,23 +542,57 @@
 
       handleRangePick(val, close = true) {
         const defaultTime = this.defaultTime || [];
-        const minDate = modifyWithTimeString(val.minDate, defaultTime[0]);
-        const maxDate = modifyWithTimeString(val.maxDate, defaultTime[1]);
-
+        let minDate = modifyWithTimeString(val.minDate, defaultTime[0]);
+        let maxDate = modifyWithTimeString(val.maxDate, defaultTime[1]);
+        if (minDate === null) {
+          minDate = maxDate;
+          maxDate = null;
+        }
+        if (minDate !== null) {
+          this.oldMinDate = minDate;
+        }
+        if (maxDate !== null) {
+          this.oldMaxDate = maxDate;
+        }
         if (this.maxDate === maxDate && this.minDate === minDate) {
           return;
         }
         this.onPick && this.onPick(val);
-        this.maxDate = maxDate;
-        this.minDate = minDate;
-
+        // this.maxDate = maxDate;
+        // this.minDate = minDate;
+        if (this.oldMinDate > this.oldMaxDate) {
+          if (this.oldMaxDate !== null) {
+            this.maxDate = this.oldMinDate;
+            this.minDate = this.oldMaxDate;
+          } else {
+            this.maxDate = this.oldMaxDate;
+            this.minDate = this.oldMinDate;
+          }
+        } else {
+          this.maxDate = this.oldMaxDate;
+          this.minDate = this.oldMinDate;
+        }
+        console.log('min ' + this.oldMinDate);
+        console.log('max ' + this.oldMaxDate);
         // workaround for https://github.com/ElemeFE/element/issues/7539, should remove this block when we don't have to care about Chromium 55 - 57
         setTimeout(() => {
-          this.maxDate = maxDate;
-          this.minDate = minDate;
+          // this.maxDate = maxDate;
+          // this.minDate = minDate;
+          if (this.oldMinDate > this.oldMaxDate) {
+            if (this.oldMaxDate !== null) {
+              this.maxDate = this.oldMinDate;
+              this.minDate = this.oldMaxDate;
+            } else {
+              this.maxDate = this.oldMaxDate;
+              this.minDate = this.oldMinDate;
+            }
+          } else {
+            this.maxDate = this.oldMaxDate;
+            this.minDate = this.oldMinDate;
+          }
         }, 10);
-        if (!close || this.showTime) return;
-        this.handleConfirm();
+        // if (!close || this.showTime) return;//日期段选择需添加确认操作
+        // this.handleConfirm();
       },
 
       handleShortcutClick(shortcut) {
@@ -652,6 +692,7 @@
         if (this.isValidValue([this.minDate, this.maxDate])) {
           this.$emit('pick', [this.minDate, this.maxDate], visible);
         }
+        this.hasClear = false;
       },
 
       isValidValue(value) {

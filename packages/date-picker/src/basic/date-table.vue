@@ -4,7 +4,6 @@
     cellpadding="0"
     class="el-date-table"
     @click="handleClick"
-    @mousemove="handleMouseMove"
     :class="{ 'is-week-mode': selectionMode === 'week' }">
     <tbody>
     <tr>
@@ -43,7 +42,7 @@
     } else if (time instanceof Date) {
       return _clearTime(time).getTime();
     } else {
-      return NaN;
+      return 0;
     }
   };
 
@@ -214,7 +213,6 @@
         }
 
         rows.firstDayPosition = firstDayPosition;
-
         return rows;
       }
     },
@@ -270,11 +268,9 @@
         if (cell.type === 'normal' && defaultValue.some(date => this.cellMatchesDate(cell, date))) {
           classes.push('default');
         }
-
         if (selectionMode === 'day' && (cell.type === 'normal' || cell.type === 'today') && this.cellMatchesDate(cell, this.value)) {
           classes.push('current');
         }
-
         if (cell.inRange && ((cell.type === 'normal' || cell.type === 'today') || this.selectionMode === 'week')) {
           classes.push('in-range');
 
@@ -344,7 +340,7 @@
             const cell = row[j];
             const index = i * 7 + j + (this.showWeekNumber ? -1 : 0);
             const time = nextDate(startDate, index - this.offsetDay).getTime();
-
+            console.log(isNaN(minDate));
             cell.inRange = minDate && time >= minDate && time <= maxDate;
             cell.start = minDate && time === minDate;
             cell.end = maxDate && time === maxDate;
@@ -410,7 +406,7 @@
             this.$emit('pick', {minDate: newDate, maxDate: null});
             this.rangeState.selecting = true;
           } else {
-            if (newDate >= this.minDate) {
+            if (newDate >= this.minDate && this.minDate !== null) {
               this.$emit('pick', {minDate: this.minDate, maxDate: newDate});
             } else {
               this.$emit('pick', {minDate: newDate, maxDate: this.minDate});
