@@ -214,6 +214,13 @@
 
         rows.firstDayPosition = firstDayPosition;
         return rows;
+      },
+      selectingS() {
+        if (this.minDate === null && this.maxDate === null) {
+          return false;
+        } else {
+          return true;
+        }
       }
     },
 
@@ -336,11 +343,9 @@
           const row = rows[i];
           for (let j = 0, l = row.length; j < l; j++) {
             if (this.showWeekNumber && j === 0) continue;
-
             const cell = row[j];
             const index = i * 7 + j + (this.showWeekNumber ? -1 : 0);
             const time = nextDate(startDate, index - this.offsetDay).getTime();
-            console.log(isNaN(minDate));
             cell.inRange = minDate && time >= minDate && time <= maxDate;
             cell.start = minDate && time === minDate;
             cell.end = maxDate && time === maxDate;
@@ -402,16 +407,15 @@
         const newDate = this.getDateOfCell(row, column);
 
         if (this.selectionMode === 'range') {
-          if (!this.rangeState.selecting) {
+          if (!this.selectingS) {
             this.$emit('pick', {minDate: newDate, maxDate: null});
-            this.rangeState.selecting = true;
+            // this.rangeState.selecting = true;
           } else {
-            if (newDate >= this.minDate && this.minDate !== null) {
+            if ((newDate <= this.minDate) && this.minDate !== null) {
+              this.$emit('pick', {minDate: newDate, maxDate: this.maxDate});
+            } else if (newDate >= this.maxDate) {
               this.$emit('pick', {minDate: this.minDate, maxDate: newDate});
-            } else {
-              this.$emit('pick', {minDate: newDate, maxDate: this.minDate});
             }
-            this.rangeState.selecting = false;
           }
         } else if (this.selectionMode === 'day') {
           this.$emit('pick', newDate);
